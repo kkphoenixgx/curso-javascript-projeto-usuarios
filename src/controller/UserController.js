@@ -9,15 +9,39 @@ class UserController{
 
     onSubmit(){
         this.formEl.addEventListener("submit", event=>{
-            event.preventDefault();;
-            this.addUserLine(this.getValues());
+            event.preventDefault();
+
+            values = this.getValues();
+
+            this.getPhoto((content)=>{
+                values.photo = content;
+                this.addUserLine(values);
+            });
         })
+    }
+
+    getPhoto(callback){
+
+        fileReader = new FileReader();
+
+        let elements = [...this.formEl.elements].filter(item =>{
+            if(item === 'photo'){
+                return item;
+            }
+        })
+
+        let files = elements[0].files[0];
+
+        fileReader.onLoad = ()=>{
+            callback(fileReader.result)
+        }
+        fileReader.readAsDataURL(files);
     }
 
     getValues(){
         let user = {};
 
-        this.formEl.elements.forEach(function (field){
+        [...this.formEl.elements].forEach(function (field){
             if(field.name == "gender") {
                 if(field.checked){
                     user[field.name] = field.value;
