@@ -11,31 +11,43 @@ class UserController{
         this.formEl.addEventListener("submit", event=>{
             event.preventDefault();
 
-            values = this.getValues();
+            let values = this.getValues();
 
-            this.getPhoto((content)=>{
+            this.getPhoto()
+            .then((content)=>{
                 values.photo = content;
                 this.addUserLine(values);
-            });
+            }),(e)=>{
+                console.log(e);
+            }
         })
     }
 
-    getPhoto(callback){
+    getPhoto(){
 
-        fileReader = new FileReader();
+        return new Promise((resolve, reject) => {
+            
+            //api :
+            let fileReader = new FileReader();
+    
+            let elements = [...this.formEl.elements].filter(item =>{
+                if(item.name === 'photo'){
+                    return item;
+                }
+            });
+    
+            let file = elements[0].files[0];
+            
+            //quando carregar:
 
-        let elements = [...this.formEl.elements].filter(item =>{
-            if(item === 'photo'){
-                return item;
-            }
+            fileReader.onLoad = ()=>{
+                resolve(fileReader.result);
+            };
+            fileReader.onerror = (e)=> {
+                reject(e);
+            };
+            fileReader.readAsDataURL(file);
         })
-
-        let files = elements[0].files[0];
-
-        fileReader.onLoad = ()=>{
-            callback(fileReader.result)
-        }
-        fileReader.readAsDataURL(files);
     }
 
     getValues(){
@@ -66,7 +78,7 @@ class UserController{
     addUserLine(dataUser){
         this.tableEl.innerHTML = 
             `<tr>
-                <td><img src="dist/img/user1-128x128.jpg" alt="User Image" class="img-circle img-sm"></td>
+                <td><img src="${dataUser.photo}" alt="User Image" class="img-circle img-sm"></td>
                 <td>${dataUser.name}</td>
                 <td>${dataUser.email}</td>
                 <td>${dataUser.admin}</td>
