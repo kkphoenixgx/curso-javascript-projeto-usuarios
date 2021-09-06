@@ -13,12 +13,17 @@ class UserController {
 
         this.formEl.addEventListener("submit", event => {
             event.preventDefault();
-            let values = this.getValues();
 
+            let values = this.getValues();
+            let btn = this.formEl.querySelector("[type=submit]");
+            
+            btn.disable = true;
             this.getPhoto().then(
                 (content) => {
                     values.photo = content;
                     this.addUserLine(values);
+                    this.formEl.reset();
+                    btn.disable = false;
                 }, 
                 (e) => {
                     console.error(e)
@@ -63,8 +68,14 @@ class UserController {
     getValues(){
 
         let user = {};
+        let valid = true;
 
         [...this.formEl.elements].forEach(function(field){
+            if(['name', 'password', 'email'].indexOf(field.name) > -1 && !field.value){
+                field.parentElement.classList.add('has-error');
+                valid = false;
+            }
+            
             if (field.name === "gender") {
 
                 if (field.checked) {
@@ -81,6 +92,9 @@ class UserController {
     
         });
     
+        if(!valid){
+            return false; 
+        };
         return new User(
             user.name, 
             user.gender, 
@@ -91,7 +105,7 @@ class UserController {
             user.photo, 
             user.admin
         );
-
+        
     }
 
     addUserLine(dataUser) {
@@ -103,7 +117,7 @@ class UserController {
                         <td>${dataUser.name}</td>
                         <td>${dataUser.email}</td>
                         <td>${(dataUser.admin) ? 'Sim':'Não'}</td>
-                        <td>${dataUser.birth}</td>
+                        <td>${Utils.dateFormate(dataUser.register)}</td>
                         <td>
                             <button type="button" class="btn btn-primary btn-xs btn-flat">Editar</button>
                             <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
