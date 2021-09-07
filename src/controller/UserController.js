@@ -18,6 +18,9 @@ class UserController {
             let btn = this.formEl.querySelector("[type=submit]");
             
             btn.disable = true;
+
+            if(!values) return false;
+
             this.getPhoto().then(
                 (content) => {
                     values.photo = content;
@@ -111,6 +114,7 @@ class UserController {
     addUserLine(dataUser) {
 
         var tr = document.createElement('tr');
+        tr.dataset.user = JSON.stringify(dataUser);
 
         tr.innerHTML = `
                         <td><img src=${dataUser.photo} class="img-circle img-sm"></td>
@@ -126,6 +130,25 @@ class UserController {
         
         this.tableEl.appendChild(tr);
 
+        this.refreshUserNumbers();
+
+    }
+
+    refreshUserNumbers(){
+        let numberAdmins = 0;
+        let numberUsers = 0;
+
+        [...this.tableEl.children].forEach(tr=>{
+            let user = JSON.parse(tr.dataset.user)
+            if(user._admin){
+                numberAdmins++;
+            }else{
+                numberUsers++;
+            }
+        })
+
+        document.querySelector("#number-admin").innerHTML = numberAdmins;
+        document.querySelector("#number-users").innerHTML = numberUsers;
     }
 
 }
