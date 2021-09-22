@@ -1,3 +1,4 @@
+// @collapse 
 class UserController {
 
     constructor (formIdCreate, formIdUpdate ,tableId){
@@ -22,7 +23,47 @@ class UserController {
             btn.disable = true;
 
             let values = this.getValues(this.formUpdateEl);
+            let index = this.formUpdateEl.dataset.rowIndex;
+            let tr = this.tableEl.rows[index];
+            let oldUser = JSON.parse(tr.dataset.user);
+
+            let result = Object.assign({}, oldUser, values); 
             
+            
+            this.getPhoto(this.formUpdateEl).then(
+                (content) => {
+
+                    if(!values.photo) {
+                        result._photo = oldUser._photo;
+                    }else {
+                        result._photo = content;
+                    }
+
+                    tr.dataset.user =  JSON.stringify(result);
+
+                    tr.innerHTML = `
+                                        <td><img src=${result._photo} class="img-circle img-sm"></td>
+                                        <td>${result._name}</td>
+                                        <td>${result._email}</td>
+                                        <td>${(result._admin) ? 'Sim':'Não'}</td>
+                                        <td>${Utils.dateFormate(result._register)}</td>
+                                        <td>
+                                        <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
+                                        <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
+                                        </td>
+                                    `; 
+                    
+                    this.eventSubmitTr(tr);
+                    this.refreshUserNumbers();
+                    
+                    this.formUpdateEl.reset();
+                    btn.disable = false;
+                    this.showPanelCreate();
+                }, 
+                (e) => {
+                    console.error(e)
+                }
+            );
         })
 
     }
@@ -38,26 +79,7 @@ class UserController {
 
             if(!values) return false;
 
-            let values = this.getValues(this.formUpdateEl);
-            let index = form.dataset.rowIndex;
-            let tr = this.tableEl.rows[index];
-            tr.dataset.user =  JSON.stringify(values);
-
-            tr.innerHTML = `
-                            <td><img src=${values.photo} class="img-circle img-sm"></td>
-                            <td>${values.name}</td>
-                            <td>${values.email}</td>
-                            <td>${(values.admin) ? 'Sim':'Não'}</td>
-                            <td>${Utils.dateFormate(values.register)}</td>
-                            <td>
-                                <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-                                <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
-                            </td>
-                        `; 
-            this.eventSubmitTr(tr);
-            this.refreshUserNumbers();
-
-            this.getPhoto().then(
+            this.getPhoto(this.formEl).then(
                 (content) => {
                     values.photo = content;
                     this.addUserLine(values);
@@ -73,13 +95,13 @@ class UserController {
 
     }
 
-    getPhoto(){
+    getPhoto(formEl){
 
         return new Promise((resolve, reject) => {
 
             let fileReader = new FileReader();
 
-            let elements = [...this.formEl.elements].filter(item => {
+            let elements = [...formEl.elements].filter(item => {
                 if (item.name === 'photo') {
                     return item;
                 }
@@ -148,17 +170,16 @@ class UserController {
     }
 
     eventSubmitTr(tr){
-        document.querySelector(".btn-edit").addEventListener('click', ()=>{
+        document.querySelector(".btn-edit").addEventListener('click', e =>{
             this.showPanelUpdate();
             
             let json = JSON.parse(tr.dataset.user);
-            let form = document.querySelector("#form-user-update");
 
-            form.dataset.rowIndex = tr.sectionRowIndex;
+            this.formUpdateEl.dataset.rowIndex = tr.sectionRowIndex;
 
             for(let name in json){
 
-                let field = form.querySelector("[name=" + name.replace("_", "") + "]");
+                let field = this.formUpdateEl.querySelector("[name=" + name.replace("_", "") + "]");
 
                 if(field){
                     switch(field.type){
@@ -167,7 +188,7 @@ class UserController {
                         continue;
                         break;
                         case 'radio':
-                            let field = form.querySelector("[name=" + name.replace("_", "") + "]" + "[value="+json[name] + "]");
+                            field = this.formUpdateEl.querySelector("[name=" + name.replace("_", "") + "]" + "[value="+json[name] + "]");
                             field.checked = true;
                             break
                         case 'checkbox':
@@ -176,9 +197,9 @@ class UserController {
                         default:
                             field.value = json[name];
                     }
-
-                    field.value = json[name];
                 }
+
+                this.formUpdateEl.querySelector(".photo").src = json._photo;
 
             }
         });
@@ -203,7 +224,7 @@ class UserController {
         
         this.tableEl.appendChild(tr);
         this.refreshUserNumbers();
-        this.submitEvent(tr)
+        this.eventSubmitTr(tr);
     }
 
     refreshUserNumbers(){
@@ -226,11 +247,13 @@ class UserController {
     showPanelUpdate(){
         document.querySelector("#box-user-create").style.display = "none";
         document.querySelector("#box-user-edit").style.display = "block";            
+        document.querySelector("#title-new-userEdit").innerText = "Editar Usuário";
     }
 
     showPanelCreate(){
         document.querySelector("#box-user-create").style.display = "block";
         document.querySelector("#box-user-edit").style.display = "none"; 
+        document.querySelector("#title-new-user").innerText = "Novo Usuário";
     }
 
 }
